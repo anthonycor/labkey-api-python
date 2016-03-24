@@ -46,27 +46,12 @@ https://www.labkey.org/announcements/home/Server/Forum/list.view?
 """
 from __future__ import unicode_literals
 
+import pandas
 from requests.exceptions import SSLError
 from labkey.utils import build_url, handle_response
 from labkey.exceptions import ServerContextError, RequestError, RequestAuthorizationError, QueryNotFoundError, ServerNotFoundError
 
-
-_query_headers = {
-    'Content-Type': 'application/json'
-}
-
 _default_timeout = 60 * 5  # 5 minutes
-
-
-class Pagination:
-    """
-    Enum of paging styles
-    """
-    PAGINATED = 'paginated'
-    SELECTED = 'selected'
-    UNSELECTED = 'unselected'
-    ALL = 'all'
-    NONE = 'none'
 
 
 def execute_sql(server_context, schema_name, sql, container_path=None,
@@ -134,16 +119,36 @@ def _make_request(server_context, url, payload, headers=None, timeout=_default_t
     try:
         session = server_context['session']
         raw_response = session.post(url, data=payload, headers=headers, timeout=timeout)
-        return handle_response(raw_response)
+        return _handle_response(raw_response)
     except SSLError as e:
         raise ServerContextError(e)
 
 
-def handle_response(response):
+def _handle_response(response):
     sc = response.status_code
 
     if (200 <= sc < 300) or sc == 304:
-        return response.json()
+        # map didn't work how I expected
+        # result = map(lambda line: line.split("\x1F\t"), str(response.content).split("\x1E\n"))
+        result = []
+        for line in response.content.decode("utf-8").split("\x1E\n"):
+            if 0 < len(line):
+                result.append(line.split("\x1F\t"))
+        columns = result[0]
+        types = result[1]
+        data = result[2:]
+        df = pandas.DataFrame.from_records(data=data, columns=columns)
+        print(df)
+        for col in range(0,len(columns)):
+            name = columns[col]
+            typename = types[col]
+            if typename == 'BOOLEAN' or typename == 'TINYINT' or typename == 'SMALLINT' or typename == 'INTEGER':
+                df[[name]] = df[[name]].applymap(lambda x: None if (x is None or x == '') else int(x))
+            elif typename == 'DOUBLE' or typename == 'REAL' or typename == 'NUMERIC':
+                df[[name]] = df[[name]].applymap(lambda x: None if (x is None or x == '') else float(x))
+            elif typename == 'TIMESTAMP':
+                df[[name]] =  df[[name]].applymap(lambda x: None if (x is None or x == '') else pandas.to_datetime(x))
+        return df
     elif sc == 401:
         raise RequestAuthorizationError(response)
     elif sc == 404:

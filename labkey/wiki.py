@@ -103,7 +103,7 @@ Test Code:
     readRequest = urllib2.Request(readUrl,None,{"Authorization": aHeader })
     try:
         readResponse = opener.open(readRequest)
-    except urllib2.HTTPError, e:
+    except urllib2.HTTPError as e:
         print "There was a problem while attempting to submit the read the wiki page " + wikiName + " via the URL " + str(e.geturl()) + ". The HTTP response code was " + str(e.getcode())
         print "The HTTP client error was: "+ format(e)
         #print "The HTTP Response Headers are: \n" + str(e.info())
@@ -166,7 +166,7 @@ Test Code:
         data = UpdateResponse.read()
         UpdateResponse.close()
         #print data        
-    except urllib2.HTTPError, e:
+    except urllib2.HTTPError as e:
         print "There was a problem while attempting to submit the update the wiki page " + wikiName + " via the URL " + e.geturl() + ". The HTTP response code was " + str(e.getcode())
         print "The HTTP client error was: "+ format(e)
         #print "The HTTP Response Headers are: \n" + e.info()
