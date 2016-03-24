@@ -138,7 +138,6 @@ def _handle_response(response):
         types = result[1]
         data = result[2:]
         df = pandas.DataFrame.from_records(data=data, columns=columns)
-        print(df)
         for col in range(0,len(columns)):
             name = columns[col]
             typename = types[col]
