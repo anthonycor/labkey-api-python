@@ -217,7 +217,6 @@ class Run(ExpObject):
         self.experiments = kwargs.pop('experiments', [])
         self.file_path_root = kwargs.pop('file_path_root', kwargs.pop('filePathRoot', None))
         self.protocol = kwargs.pop('protocol', None)
-        self.data_outputs = kwargs.pop('data_outputs', kwargs.pop('dataOutputs', []))
         self.data_rows = kwargs.pop('data_rows', kwargs.pop('dataRows', []))
         self.material_inputs = kwargs.pop('material_inputs', kwargs.pop('materialInputs', []))
         self.material_outputs = kwargs.pop('material_outputs', kwargs.pop('materialOutputs', []))
@@ -228,12 +227,11 @@ class Run(ExpObject):
 
         # initialize data_inputs
         data_inputs = kwargs.pop('data_inputs', kwargs.pop('dataInputs', []))
-        data_inputs_instances = []
-
-        for input in data_inputs:
-            data_inputs_instances.append(Data.from_data(input))
-
-        self.data_inputs = data_inputs_instances
+        self.data_inputs = [Data.from_data(input) for input in data_inputs]
+        
+         # initialize data_outputs
+        data_outputs = kwargs.pop('data_outputs', kwargs.pop('dataOutputs', []))
+        self.data_outputs = [Data.from_data(output) for output in data_outputs]
 
     @staticmethod
     def from_data(data):
@@ -243,6 +241,7 @@ class Run(ExpObject):
         data = super(Run, self).to_json()
 
         data['dataInputs'] = [data_input.to_json() for data_input in self.data_inputs]
+        data['dataOutputs'] = [data_output.to_json() for data_output in self.data_outputs]
         data['dataRows'] = self.data_rows
         data['experiments'] = self.experiments
         data['filePathRoot'] = self.file_path_root
